@@ -40,7 +40,7 @@ retrieve_author_info() {
 	doi="$1"
 	info_json=$(curl -s "https://api.crossref.org/works/$doi")
 	pubdate=$(echo "$info_json" | json message.issued.date-parts[0][0])
-	pubauthor=$(echo "$info_json" | json message.author[0].family | tr -d ' ' | iconv -f utf-8 -t ascii//translit | tr -d '"')
+	pubauthor=$(echo "$info_json" | json message.author[0].family | tr -d ' ' | iconv -f utf-8 -t ascii//translit | tr -d '"' | tr -d "'")
 	echo "$pubauthor$pubdate"
 }
 
