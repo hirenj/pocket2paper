@@ -1,0 +1,13 @@
+#!/bin/bash
+
+POCKET=~/go/bin/pocket
+TARGETTAG="papers"
+MASTERLIST="$HOME/Documents/docs/OneDrive/papers_to_get"
+
+pocket_entries=$($POCKET list --tag=$TARGETTAG | sed -e 's/].*</]	/' | tr -d '>')
+
+cp "$MASTERLIST.txt" "$MASTERLIST-backup-$(date +%F_%R | tr -d ':').txt"
+
+results=$((cat "$MASTERLIST.txt"; echo ""; echo "$pocket_entries") | awk -F$'\t' '!seen[$1]++')
+
+echo "$results" > $MASTERLIST.txt
