@@ -30,6 +30,12 @@ retrieve_biorxiv() {
 	fi
 }
 
+retrieve_chemrxiv() {
+	if [[ $1 =~ 10\.26434 ]]; then
+		echo "chemrxiv-$1" | sed -e 's/10\.26434\///';
+	fi
+}
+
 retrieve_peerj() {
 	if [[ $1 =~ 10\.7717 ]]; then
 		echo "peerj-$1" | sed -e 's/10\.7717\///';
@@ -48,6 +54,9 @@ retrieve_identifier() {
 	identifier=$(retrieve_pmid $1)
 	if [ -z "$identifier" ]; then
 		identifier=$(retrieve_biorxiv $1)
+	fi
+	if [ -z "$identifier" ]; then
+		identifier=$(retrieve_chemrxiv $1)
 	fi
 	if [ -z "$identifier" ]; then
 		identifier=$(retrieve_peerj $1)
@@ -81,6 +90,9 @@ while IFS='$\n' read -r doi; do
 	fi
 
 	if [[ $outfile =~ biorxiv ]]; then
+		new_url=$(curl -Ls -o /dev/null -w %{url_effective} "http://dx.doi.org/$doi")
+		curl -Ls -o $tmpdir/$outfile.pdf "$new_url.full.pdf"
+	elif [[ $outfile =~ chemrxiv ]]; then
 		new_url=$(curl -Ls -o /dev/null -w %{url_effective} "http://dx.doi.org/$doi")
 		curl -Ls -o $tmpdir/$outfile.pdf "$new_url.full.pdf"
 	elif [[ $doi =~ 10\.7717 ]]; then
