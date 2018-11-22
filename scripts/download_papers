@@ -74,6 +74,16 @@ retrieve_filename() {
 	echo "$name-$identifier"
 }
 
+rewrite_chemrxiv() {
+	chemrxiv_url="$1"
+# https://chemrxiv.org/articles/A_Mucin-Specific_Protease_Enables_Molecular_and_Functional_Analysis_of_Human_Cancer-Associated_Mucins/7330676/1
+# https://ndownloader.figshare.com/articles/7330676/versions/1/export_pdf
+	url_parts=$(echo "$chemrxiv_url" | sed -e 's/.*\/\([0-9][0-9]*\)\/\([0-9][0-9]*\)/\1	\2/')
+	articleid="${url_parts%$'\t'*}"
+	version="${url_parts#*$'\t'}"
+	echo "https://ndownloader.figshare.com/articles/${articleid}/versions/${version}/export_pdf"
+}
+
 
 while IFS='$\n' read -r doi; do
 	if [[ -z ${doi// } ]]; then
@@ -94,7 +104,8 @@ while IFS='$\n' read -r doi; do
 		curl -Ls -o $tmpdir/$outfile.pdf "$new_url.full.pdf"
 	elif [[ $outfile =~ chemrxiv ]]; then
 		new_url=$(curl -Ls -o /dev/null -w %{url_effective} "http://dx.doi.org/$doi")
-		curl -Ls -o $tmpdir/$outfile.pdf "$new_url.full.pdf"
+		chemrxiv_url=$(rewrite_chemrxiv $new_url)
+		curl -Ls -o $tmpdir/$outfile.pdf "$chemrxiv_url"
 	elif [[ $doi =~ 10\.7717 ]]; then
 		new_url=$(curl -Ls -o /dev/null -w %{url_effective} "http://dx.doi.org/$doi" | sed -e 's/\/$//')
 		curl -Ls -o $tmpdir/$outfile.pdf "$new_url.pdf"
