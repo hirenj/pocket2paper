@@ -1,0 +1,44 @@
+#!/bin/bash
+
+pocket_access_token="$POCKET_ACCESS_TOKEN"
+pocket_consumer_key="$POCKET_CONSUMER_KEY"
+
+config_bucket="$BUCKET"
+
+
+
+pocket_tag="papers"
+last_timestamp="0"
+
+curl -o pocketdata.json  "https://getpocket.com/v3/get?consumer_key=$pocket_consumer_key&access_token=$pocket_access_token&tag=$pocket_tag&since=$last_timestamp"
+
+./build/run_translation-server.sh &
+
+# zotero/translation-server:latest 
+
+# apt-get install jq curl s3cmd
+
+s3cmd get s3://$config_bucket/status.tsv status.tsv
+
+# Check if IDs have been checked
+
+cut -f1 status.tsv > existing.tsv
+
+# Extract IDs from pocketdata.json
+
+jq -c '.list | to_entries[] | [ .key,.value.resolved_url ]' pocketdata.json | tr -d '[]"' | tr ',' $'\t' | grep -v -F -f existing.tsv - > new_ids.tsv
+
+IFS=$'\t'
+while read id url; do
+  echo "ID=$id URL=$url"
+  doi=$(get_doi $url)
+  echo -e "$id\t$url\t$doi" >> status.tsv
+done < new_ids.tsv
+
+# retrieve DOI, upload DOI to ID as text
+
+# If ID exists and content-type is PDF, stop
+
+# If ID exists and content-type is text, try to download PDF, increment counter
+
+s3cmd put status.tsv s3://$config_bucket/status.tsv
